@@ -1,19 +1,19 @@
 import { Request, Response } from "express";
 
 import express from "express";
+import { connectDb } from "./db";
 
 const app = express();
+app.use(express.json());
+app.get("/api/v1/signup", (req, res) => {
+  const { username, email, password } = req.body;
 
-app.get("/", (req: Request, res: Response) => {
-  const userEmail = req.query.email;
-  const userName = req.query.name;
-  const userAge = req.query.age;
-
-  res.send(`Email: ${userEmail} Name: ${userName} Age: ${userAge}`);
-
-  console.log(`Email: ${userEmail} Name: ${userName} Age: ${userEmail}`);
+  res.json({ username, email, password });
 });
 
-app.listen(3000, () => {
-  console.log("Server is running on port 3000");
+connectDb().then(() => {
+  console.log("Connected to MongoDB");
+  app.listen(3000, () => {
+    console.log("Server is running on port 3000");
+  });
 });
