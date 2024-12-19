@@ -3,7 +3,6 @@ import { Request, Response } from "express";
 import express from "express";
 import { connectDb } from "./db";
 import UserModel from "./schema/user.schema";
-import { Jwt } from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { Schema } from "zod";
 import SignUpSchema from "./validateSchema/Sign-Up-Validation";
@@ -93,6 +92,23 @@ app.post(
     });
 
     res.status(200).json({ content });
+  }
+);
+
+app.get(
+  "/api/v1/content",
+  validateUser,
+  async (req: Request, res: Response) => {
+    const contents = await ContentModel.find({ userId: req.userId }).populate(
+      "userId",
+      "username"
+    );
+
+    if (!contents) {
+      res.status(400).json({ message: "No Content Found" });
+    }
+
+    res.status(200).json({ contents });
   }
 );
 
