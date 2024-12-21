@@ -10,6 +10,7 @@ import LoginSchema from "./validateSchema/Sign-In-Validation";
 import { options } from "./config/config";
 import validateUser from "./middleware/validateUser";
 import { ContentModel } from "./schema/content.schema";
+import { LinkModel } from "./schema/link.schema";
 
 const app = express();
 app.use(express.json());
@@ -112,9 +113,61 @@ app.get(
   }
 );
 
+app.get(
+  "/api/v1/brain/share",
+  validateUser,
+  async (req: Request, res: Response) => {
+    const { share } = req.body;
+    if (share) {
+      const link = await LinkModel.findOne({
+        userId: req.userId,
+      });
+      if (link) {
+        res.status(200).json({ message: "/share/" + link.hash });
+        return;
+      }
+      const hash = crypto.randomUUID();
+      await LinkModel.create({
+        hash: hash,
+        userId: req.userId,
+      });
+      res.status(200).json({ message: "/share/" + hash });
+    } else {
+      await LinkModel.deleteOne({
+        userId: req.userId,
+      });
+
+      res.status(200).json({ message: "Link Removed Successfully" });
+    }
+  }
+);
+
+app.get("/api/v1/brain/:shareLink", async (req: Request, res: Response) => {
+  const link = req.params.shareLink;
+  const hash = await LinkModel.findOne({
+    hash: link,
+  });
+  if (!hash) {
+    res.json(411).json({ message: "Link Not Found" });
+    return;
+  }
+
+  const contents = await ContentModel.find({
+    userId: hash.userId,
+  }).populate("userId", "username");
+
+  if (!contents) {
+    res.status(400).json({ message: "No Content Found" });
+    return;
+  }
+  res.status(200).json({
+    contents,
+  });
+});
+
 connectDb().then(() => {
   console.log("Connected to MongoDB");
-  app.listen(3000, () => {
+  app.listen(3001, () => {
     console.log("Server is running on port 3000");
   });
 });
