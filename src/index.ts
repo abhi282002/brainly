@@ -113,7 +113,7 @@ app.get(
   }
 );
 
-app.get(
+app.post(
   "/api/v1/brain/share",
   validateUser,
   async (req: Request, res: Response) => {
@@ -142,32 +142,31 @@ app.get(
   }
 );
 
-app.get("/api/v1/brain/:shareLink", async (req: Request, res: Response) => {
+app.post("/api/v1/brain/:shareLink", async (req: Request, res: Response) => {
   const link = req.params.shareLink;
   const hash = await LinkModel.findOne({
     hash: link,
   });
   if (!hash) {
-    res.json(411).json({ message: "Link Not Found" });
-    return;
-  }
+    res.status(411).json({ message: "Link Not Found" });
+  } else {
+    const contents = await ContentModel.find({
+      userId: hash?.userId,
+    }).populate("userId", "username");
 
-  const contents = await ContentModel.find({
-    userId: hash.userId,
-  }).populate("userId", "username");
-
-  if (!contents) {
-    res.status(400).json({ message: "No Content Found" });
-    return;
+    if (!contents) {
+      res.status(400).json({ message: "No Content Found" });
+      return;
+    }
+    res.status(200).json({
+      contents,
+    });
   }
-  res.status(200).json({
-    contents,
-  });
 });
 
 connectDb().then(() => {
   console.log("Connected to MongoDB");
   app.listen(3001, () => {
-    console.log("Server is running on port 3000");
+    console.log("Server is running on port 3001");
   });
 });
